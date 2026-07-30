@@ -119,9 +119,18 @@ jobs:
           command: uv sync --locked --python 3.11 --extra dev
 
       - name: Run docker integration tests
-        # The test runner auto-caps workers for tests/docker (the suite is
-        # bounded by the single dind dockerd, not CPU — see
-        # run_tests_parallel.py's docker-suite auto-cap).
+        # env vars restored after the profile-action conversion dropped
+        # them: HERMES_TEST_IMAGE skips the per-file docker build (each
+        # test FILE is its own subprocess — without this, 25 files each
+        # rebuild the image and thrash the single dind daemon). Blank API
+        # keys match tests.yml policy (no accidental real-API calls).
+        # The runner also auto-caps workers for tests/docker (dockerd-bound;
+        # see run_tests_parallel.py).
+        env:
+          HERMES_TEST_IMAGE: ${{ env.IMAGE_NAME }}:test
+          OPENROUTER_API_KEY: ""
+          OPENAI_API_KEY: ""
+          NOUS_API_KEY: ""
         uses: ./.github/actions/profile
         with:
           label: docker-tests
